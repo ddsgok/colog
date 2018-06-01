@@ -7,6 +7,8 @@ import (
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/comail/wincolog"
 )
 
 type outputTest struct {
@@ -28,6 +30,8 @@ func TestColors(t *testing.T) {
 	log.SetFlags(log.LstdFlags)
 	Register()
 
+	ForceColorOutput(true)
+	SetOutput(wincolog.Stdout())
 	SetMinLevel(LTrace)
 	SetDefaultLevel(LTrace)
 

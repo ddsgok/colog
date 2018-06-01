@@ -24,25 +24,28 @@ import (
 	"time"
 )
 
-// std is the global singleton
-// analog of the standard log.std
-var std = NewCoLog(os.Stderr, "", 0)
+var (
+	// std is the global singleton
+	// analog of the standard log.std
+	std = NewCoLog(os.Stderr, "", 0)
+)
 
 // CoLog encapsulates our log writer
 type CoLog struct {
-	mu           sync.Mutex
-	host         string
-	prefix       string
-	minLevel     Level
-	defaultLevel Level
-	headers      HeaderMap
-	extractor    Extractor
-	formatter    Formatter
-	customFmt    bool
-	parseFields  bool
-	fixed        Fields
-	hooks        hookPool
-	out          io.Writer
+	mu               sync.Mutex
+	host             string
+	prefix           string
+	minLevel         Level
+	defaultLevel     Level
+	headers          HeaderMap
+	extractor        Extractor
+	formatter        Formatter
+	customFmt        bool
+	parseFields      bool
+	fixed            Fields
+	hooks            hookPool
+	out              io.Writer
+	forceColorOutput bool
 }
 
 // Entry represents a message being logged and all attached data
@@ -151,6 +154,8 @@ func NewCoLog(out io.Writer, prefix string, flags int) *CoLog {
 		cl.host = host
 	}
 
+	cl.forceColorOutput = false
+
 	return cl
 }
 
@@ -258,6 +263,11 @@ func (cl *CoLog) SetExtractor(ex Extractor) {
 	defer cl.mu.Unlock()
 
 	cl.extractor = ex
+}
+
+// ForceColorOutput will set a flag that forces logger to be colored.
+func (cl *CoLog) ForceColorOutput(val bool) {
+	cl.forceColorOutput = val
 }
 
 // FixedValue sets a key-value pair that will get automatically
@@ -403,6 +413,9 @@ func (cl *CoLog) applyLevel(e *Entry) {
 
 // figure if output supports color
 func (cl *CoLog) colorSupported() bool {
+	if cl.forceColorOutput {
+		return true
+	}
 
 	// ColorSupporters can decide themselves
 	if ce, ok := cl.out.(ColorSupporter); ok {
@@ -511,6 +524,11 @@ func SetFormatter(f Formatter) {
 // SetExtractor sets the extractor to use by the standard logger
 func SetExtractor(ex Extractor) {
 	std.SetExtractor(ex)
+}
+
+// ForceColorOutput will set a flag that forces logger to be colored.
+func ForceColorOutput(val bool) {
+	std.ForceColorOutput(val)
 }
 
 // FixedValue sets a field-value pair that will get automatically
