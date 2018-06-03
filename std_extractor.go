@@ -8,7 +8,7 @@ import (
 // regex to extract key-value (or quoted value) from the logged message
 // if you can do this better please make a pull request
 // this is just the result of lots of trial and error
-var fieldsRegex = `(?P<key>([\pL0-9_]+))\s*=\s*((?P<value>([\pL0-9_]+))|(?P<quoted>("[^"]*"|'[^']*')))`
+var fieldsRegex = `(?P<key>([\pL0-9_]+))\s*=\s*((?P<value>([\pL0-9_\-:\.\\\/]+))|(?P<quoted>("[^"]*"|'[^']*')))`
 
 // StdExtractor implements a regex based extractor for key-value pairs
 // both unquoted foo=bar and quoted foo="some bar" are supported
