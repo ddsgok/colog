@@ -31,9 +31,12 @@ func TestColors(t *testing.T) {
 	Register()
 
 	ForceColorOutput(true)
+	ParseFields(true)
 	SetOutput(wincolog.Stdout())
 	SetMinLevel(LTrace)
 	SetDefaultLevel(LTrace)
+
+	log.Print("info: should parse fields field=2 a=3")
 
 	for _, tt := range outputTests {
 		tt.in = fmt.Sprintf(tt.in, "")

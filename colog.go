@@ -46,6 +46,7 @@ type CoLog struct {
 	hooks            hookPool
 	out              io.Writer
 	forceColorOutput bool
+	addedCallDepth int
 }
 
 // Entry represents a message being logged and all attached data
@@ -159,6 +160,27 @@ func NewCoLog(out io.Writer, prefix string, flags int) *CoLog {
 	return cl
 }
 
+// NewColoredCoLog returns CoLog instance ready to be used in logger.SetOutput()
+func NewColoredCoLog(out io.Writer, prefix string, flags int, adjustToRight bool) *CoLog {
+	cl := new(CoLog)
+	cl.minLevel = initialMinLevel
+	cl.defaultLevel = initialDefaultLevel
+	cl.hooks = make(hookPool)
+	cl.fixed = make(Fields)
+	cl.headers = defaultHeaders
+	cl.prefix = prefix
+	cl.formatter = &StdFormatter{Flag: flags, AdjustFieldsToRight: adjustToRight}
+	cl.extractor = &StdExtractor{}
+	cl.forceColorOutput = true
+	cl.SetOutput(out)
+	if host, err := os.Hostname(); err != nil {
+		cl.host = host
+	}
+
+
+	return cl
+}
+
 // Register sets CoLog as output for the default logger.
 // It "hijacks" the standard logger flags and prefix previously set.
 // It's not possible to know the output previously set, so the
@@ -190,6 +212,12 @@ func (cl *CoLog) AddHook(hook Hook) {
 	for _, l := range hook.Levels() {
 		cl.hooks[l] = append(cl.hooks[l], hook)
 	}
+}
+
+// AdjustCallDepth set additional depth to be considered on call stack
+// when showing file line of log.
+func (cl *CoLog) AdjustCallDepth(depth int) {
+	cl.addedCallDepth = depth
 }
 
 // SetHost sets the logger hostname assigned to the entries
@@ -391,7 +419,7 @@ func (cl *CoLog) parse(p []byte) *Entry {
 
 	// this is a bit expensive, check is anyone might actually need it
 	if len(cl.hooks) != 0 || cl.formatter.Flags()&(log.Lshortfile|log.Llongfile) != 0 {
-		e.File, e.Line = getFileLine(5)
+		e.File, e.Line = getFileLine(5 + cl.addedCallDepth)
 	}
 
 	return e
@@ -408,7 +436,6 @@ func (cl *CoLog) applyLevel(e *Entry) {
 	}
 
 	e.Level = cl.defaultLevel
-	return
 }
 
 // figure if output supports color
