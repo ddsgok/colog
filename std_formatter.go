@@ -36,6 +36,7 @@ type StdFormatter struct {
 	Flag           int
 	HeaderPlain    LevelMap
 	HeaderColor    LevelMap
+	AdjustFieldsToRight bool
 	Colors         bool // Force enable colors
 	NoColors       bool // Force disable colors (has preference)
 	colorSupported bool
@@ -169,7 +170,7 @@ func (sf *StdFormatter) stdFields(buf *[]byte, f Fields, level Level) {
 	}
 
 	// Fields in right side of the screen if everything fits
-	if sf.Colors {
+	if sf.Colors && sf.AdjustFieldsToRight {
 		halfWidth := int(terminalWidth(int(os.Stderr.Fd())) / 2)
 		if halfWidth > len(*buf) && halfWidth > len(tbuf.Bytes()) {
 			// Add padding until half screen
@@ -188,6 +189,8 @@ func (sf *StdFormatter) stdFields(buf *[]byte, f Fields, level Level) {
 	}
 
 	*buf = append(*buf, tbuf.Bytes()...)
+	_ = 1
+	_ = 2
 }
 
 // get file a line where logger was called
