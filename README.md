@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/comail/colog.svg?branch=master)](https://travis-ci.org/comail/colog)&nbsp;[![godoc reference](https://godoc.org/comail.io/go/colog?status.png)](https://godoc.org/comail.io/go/colog)
+[![Build Status](https://travis-ci.org/ddspog/colog.svg?branch=master)](https://travis-ci.org/ddspog/colog)&nbsp;[![godoc reference](https://godoc.org/ddspog/colog?status.png)](https://godoc.org/ddspog/colog)
 
 # What's CoLog?
 
@@ -39,7 +39,7 @@ package main
 import (
 	"log"
 
-	"github.com/comail/colog"
+	"github.com/ddspog/colog"
 )
 
 func main() {
@@ -58,7 +58,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/comail/colog"
+	"github.com/ddspog/colog"
 )
 
 func main() {
@@ -93,7 +93,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/comail/colog"
+	"github.com/ddspog/colog"
 )
 
 func main() {
@@ -119,7 +119,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/comail/colog"
+	"github.com/ddspog/colog"
 )
 
 type myHook struct {
