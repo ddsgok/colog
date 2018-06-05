@@ -30,13 +30,14 @@ func TestColors(t *testing.T) {
 	log.SetFlags(log.LstdFlags)
 	Register()
 
-	ForceColorOutput(true)
-	ParseFields(true)
+	AdjustCallDepth(0)
+	SetOmitHeaders(false)
+	SetParseFields(true)
+	SetAdjustFieldsToRight(false)
+	SetForceColorOutput(true)
 	SetOutput(wincolog.Stdout())
 	SetMinLevel(LTrace)
 	SetDefaultLevel(LTrace)
-
-	log.Print("info: should parse fields field=2 a=3")
 
 	for _, tt := range outputTests {
 		tt.in = fmt.Sprintf(tt.in, "")
@@ -236,7 +237,7 @@ func TestHooks(t *testing.T) {
 	h2 := &mockHook{levels: []Level{LInfo, LWarning}}
 	tw := new(mockWriter)
 	cl := NewCoLog(tw, "", 0)
-	cl.ParseFields(true)
+	cl.SetParseFields(true)
 	cl.AddHook(h1)
 	cl.AddHook(h2)
 	logger := cl.NewLogger()
@@ -320,7 +321,7 @@ func TestFixedValues(t *testing.T) {
 	hook := &mockHook{levels: []Level{LDebug, LInfo}}
 	tw := new(mockWriter)
 	cl := NewCoLog(tw, "", 0)
-	cl.ParseFields(true)
+	cl.SetParseFields(true)
 	cl.FixedValue("key", "val")
 	cl.FixedValue("foo", "bar")
 	cl.AddHook(hook)

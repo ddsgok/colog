@@ -24,45 +24,84 @@ import (
 	"time"
 )
 
+const (
+	// Unknown severity level
+	unknown Level = iota
+	// LTrace represents trace severity level
+	LTrace
+	// LDebug represents debug severity level
+	LDebug
+	// LInfo represents info severity level
+	LInfo
+	// LMessage represents message severity level
+	LMessage
+	// LWarning represents warning severity level
+	LWarning
+	// LError represents error severity level
+	LError
+	// LAlert represents alert severity level
+	LAlert
+)
+
 var (
 	// std is the global singleton
 	// analog of the standard log.std
 	std = NewCoLog(os.Stderr, "", 0)
+
+	initialMinLevel     = LTrace
+	initialDefaultLevel = LInfo
+
+	defaultHeaders = HeaderMap{
+		"t: ":       LTrace,
+		"trc: ":     LTrace,
+		"trace: ":   LTrace,
+		"d: ":       LDebug,
+		"dbg: ":     LDebug,
+		"debug: ":   LDebug,
+		"i: ":       LInfo,
+		"inf: ":     LInfo,
+		"info: ":    LInfo,
+		"m: ":       LMessage,
+		"msg: ":     LMessage,
+		"message: ": LMessage,
+		"w: ":       LWarning,
+		"wrn: ":     LWarning,
+		"warn: ":    LWarning,
+		"warning: ": LWarning,
+		"e: ":       LError,
+		"err: ":     LError,
+		"error: ":   LError,
+		"a: ":       LAlert,
+		"alr: ":     LAlert,
+		"alert: ":   LAlert,
+		"panic: ":   LAlert,
+	}
 )
-
-// CoLog encapsulates our log writer
-type CoLog struct {
-	mu               sync.Mutex
-	host             string
-	prefix           string
-	minLevel         Level
-	defaultLevel     Level
-	headers          HeaderMap
-	extractor        Extractor
-	formatter        Formatter
-	customFmt        bool
-	parseFields      bool
-	fixed            Fields
-	hooks            hookPool
-	out              io.Writer
-	forceColorOutput bool
-	addedCallDepth int
-}
-
-// Entry represents a message being logged and all attached data
-type Entry struct {
-	Level   Level     // severity: trace, debug, info, warning, error, alert
-	Time    time.Time // time of the event
-	Host    string    // host origin of the message
-	Prefix  string    // Prefix set to the logger
-	File    string    // file where the log was called
-	Line    int       // line in the file where the log was called
-	Message []byte    // logged message
-	Fields  Fields    // map of key-value data parsed from the message
-}
 
 // Level represents severity level
 type Level uint8
+
+// String implements the Stringer interface for levels
+func (level Level) String() string {
+	switch level {
+	case LTrace:
+		return "trace"
+	case LDebug:
+		return "debug"
+	case LInfo:
+		return "info"
+	case LMessage:
+		return "message"
+	case LWarning:
+		return "warning"
+	case LError:
+		return "error"
+	case LAlert:
+		return "alert"
+	}
+
+	return "unknown"
+}
 
 // LevelMap links levels with output header bytes
 type LevelMap map[Level][]byte
@@ -76,131 +115,70 @@ type hookPool map[Level][]Hook
 // Fields is the key-value map for extracted data
 type Fields map[string]interface{}
 
-const (
-	// Unknown severity level
-	unknown Level = iota
-	// LTrace represents trace severity level
-	LTrace
-	// LDebug represents debug severity level
-	LDebug
-	// LInfo represents info severity level
-	LInfo
-	// LWarning represents warning severity level
-	LWarning
-	// LError represents error severity level
-	LError
-	// LAlert represents alert severity level
-	LAlert
-)
-
-// String implements the Stringer interface for levels
-func (level Level) String() string {
-	switch level {
-	case LTrace:
-		return "trace"
-	case LDebug:
-		return "debug"
-	case LInfo:
-		return "info"
-	case LWarning:
-		return "warning"
-	case LError:
-		return "error"
-	case LAlert:
-		return "alert"
-	}
-
-	return "unknown"
+// Entry represents a message being logged and all attached data
+type Entry struct {
+	Level   Level     // severity: trace, debug, info, warning, error, alert
+	Time    time.Time // time of the event
+	Host    string    // host origin of the message
+	Prefix  string    // Prefix set to the logger
+	File    string    // file where the log was called
+	Line    int       // line in the file where the log was called
+	Message []byte    // logged message
+	Fields  Fields    // map of key-value data parsed from the message
 }
 
-var initialMinLevel = LTrace
-var initialDefaultLevel = LInfo
-
-var defaultHeaders = HeaderMap{
-	"t: ":       LTrace,
-	"trc: ":     LTrace,
-	"trace: ":   LTrace,
-	"d: ":       LDebug,
-	"dbg: ":     LDebug,
-	"debug: ":   LDebug,
-	"i: ":       LInfo,
-	"inf: ":     LInfo,
-	"info: ":    LInfo,
-	"w: ":       LWarning,
-	"wrn: ":     LWarning,
-	"warn: ":    LWarning,
-	"warning: ": LWarning,
-	"e: ":       LError,
-	"err: ":     LError,
-	"error: ":   LError,
-	"a: ":       LAlert,
-	"alr: ":     LAlert,
-	"alert: ":   LAlert,
-	"panic: ":   LAlert,
+// CoLog encapsulates our log writer
+type CoLog struct {
+	mu                  sync.Mutex
+	host                string
+	prefix              string
+	minLevel            Level
+	defaultLevel        Level
+	headers             HeaderMap
+	extractor           Extractor
+	formatter           Formatter
+	customFmt           bool
+	parseFields         bool
+	fixed               Fields
+	hooks               hookPool
+	out                 io.Writer
+	forceColorOutput    bool
+	omitHeaders         bool
+	adjustFieldsToRight bool
+	addedCallDepth      int
 }
 
-// NewCoLog returns CoLog instance ready to be used in logger.SetOutput()
-func NewCoLog(out io.Writer, prefix string, flags int) *CoLog {
-	cl := new(CoLog)
-	cl.minLevel = initialMinLevel
-	cl.defaultLevel = initialDefaultLevel
-	cl.hooks = make(hookPool)
-	cl.fixed = make(Fields)
-	cl.headers = defaultHeaders
-	cl.prefix = prefix
-	cl.formatter = &StdFormatter{Flag: flags}
-	cl.extractor = &StdExtractor{}
-	cl.SetOutput(out)
-	if host, err := os.Hostname(); err != nil {
-		cl.host = host
-	}
-
-	cl.forceColorOutput = false
-
-	return cl
+// AdjustCallDepth set additional depth to be considered on call stack
+// when showing file line of log.
+func (cl *CoLog) AdjustCallDepth(depth int) {
+	cl.addedCallDepth = depth
 }
 
-// NewColoredCoLog returns CoLog instance ready to be used in logger.SetOutput()
-func NewColoredCoLog(out io.Writer, prefix string, flags int, adjustToRight bool) *CoLog {
-	cl := new(CoLog)
-	cl.minLevel = initialMinLevel
-	cl.defaultLevel = initialDefaultLevel
-	cl.hooks = make(hookPool)
-	cl.fixed = make(Fields)
-	cl.headers = defaultHeaders
-	cl.prefix = prefix
-	cl.formatter = &StdFormatter{Flag: flags, AdjustFieldsToRight: adjustToRight}
-	cl.extractor = &StdExtractor{}
-	cl.forceColorOutput = true
-	cl.SetOutput(out)
-	if host, err := os.Hostname(); err != nil {
-		cl.host = host
-	}
-
-
-	return cl
+// SetOmitHeaders will set a flag that skips printing headers.
+func (cl *CoLog) SetOmitHeaders(val bool) {
+	cl.omitHeaders = val
+	cl.resetFormatter()
 }
 
-// Register sets CoLog as output for the default logger.
-// It "hijacks" the standard logger flags and prefix previously set.
-// It's not possible to know the output previously set, so the
-// default os.Stderr is assumed.
-func Register() {
-	// Inherit standard logger flags and prefix if appropriate
-	if !std.customFmt {
-		std.formatter.SetFlags(log.Flags())
-	}
+// SetAdjustFieldsToRight will set a flag that allows adjusting fields to
+// right side of console.
+func (cl *CoLog) SetAdjustFieldsToRight(val bool) {
+	cl.adjustFieldsToRight = val
+	cl.resetFormatter()
+}
 
-	if log.Prefix() != "" && std.prefix == "" {
-		std.SetPrefix(log.Prefix())
-	}
+// SetForceColorOutput will set a flag that forces logger to be colored.
+func (cl *CoLog) SetForceColorOutput(val bool) {
+	cl.forceColorOutput = val
+	cl.notifyColorFormatter()
+}
 
-	// Disable all extras
-	log.SetPrefix("")
-	log.SetFlags(0)
+// SetParseFields activates or deactivates field parsing in the message
+func (cl *CoLog) SetParseFields(active bool) {
+	cl.mu.Lock()
+	defer cl.mu.Unlock()
 
-	// Set CoLog as output
-	log.SetOutput(std)
+	cl.parseFields = active
 }
 
 // AddHook adds a hook to be fired on every event with
@@ -212,12 +190,6 @@ func (cl *CoLog) AddHook(hook Hook) {
 	for _, l := range hook.Levels() {
 		cl.hooks[l] = append(cl.hooks[l], hook)
 	}
-}
-
-// AdjustCallDepth set additional depth to be considered on call stack
-// when showing file line of log.
-func (cl *CoLog) AdjustCallDepth(depth int) {
-	cl.addedCallDepth = depth
 }
 
 // SetHost sets the logger hostname assigned to the entries
@@ -252,14 +224,6 @@ func (cl *CoLog) SetDefaultLevel(l Level) {
 	cl.defaultLevel = l
 }
 
-// ParseFields activates or deactivates field parsing in the message
-func (cl *CoLog) ParseFields(active bool) {
-	cl.mu.Lock()
-	defer cl.mu.Unlock()
-
-	cl.parseFields = active
-}
-
 // SetHeaders sets custom headers as the input headers to be search for to determine the level
 func (cl *CoLog) SetHeaders(headers HeaderMap) {
 	cl.mu.Lock()
@@ -291,11 +255,6 @@ func (cl *CoLog) SetExtractor(ex Extractor) {
 	defer cl.mu.Unlock()
 
 	cl.extractor = ex
-}
-
-// ForceColorOutput will set a flag that forces logger to be colored.
-func (cl *CoLog) ForceColorOutput(val bool) {
-	cl.forceColorOutput = val
 }
 
 // FixedValue sets a key-value pair that will get automatically
@@ -344,10 +303,7 @@ func (cl *CoLog) SetOutput(w io.Writer) {
 
 	cl.out = w
 
-	// if we have a color formatter, notify if new output supports color
-	if _, ok := cl.formatter.(ColorFormatter); ok {
-		cl.formatter.(ColorFormatter).ColorSupported(cl.colorSupported())
-	}
+	cl.notifyColorFormatter()
 }
 
 // NewLogger returns a colog-enabled logger
@@ -399,6 +355,23 @@ func (cl *CoLog) Write(p []byte) (n int, err error) {
 	}
 
 	return len(p), nil
+}
+
+func (cl *CoLog) notifyColorFormatter() {
+	// if we have a color formatter, notify if new output supports color
+	if _, ok := cl.formatter.(ColorFormatter); ok {
+		cl.formatter.(ColorFormatter).ColorSupported(cl.forceColorOutput || cl.colorSupported())
+	}
+}
+
+func (cl *CoLog) resetFormatter() {
+	cl.mu.Lock()
+	defer cl.mu.Unlock()
+
+	flags := cl.formatter.Flags()
+	cl.formatter = &StdFormatter{Flag: flags, AdjustFieldsToRight: cl.adjustFieldsToRight, OmitHeaders: cl.omitHeaders}
+
+	cl.notifyColorFormatter()
 }
 
 func (cl *CoLog) parse(p []byte) *Entry {
@@ -487,6 +460,36 @@ func (cl *CoLog) fireHooks(e *Entry) {
 
 // Standard logger functions
 
+// AdjustCallDepth set additional depth to be considered on call stack
+// when showing file line of log when using standard logger.
+func AdjustCallDepth(depth int) {
+	std.AdjustCallDepth(depth)
+}
+
+// SetOmitHeaders will set a flag that skips printing headers when
+// using standard logger.
+func SetOmitHeaders(val bool) {
+	std.SetOmitHeaders(val)
+}
+
+// SetAdjustFieldsToRight will set a flag that allows adjusting fields to
+// right side of console when using standard logger.
+func SetAdjustFieldsToRight(val bool) {
+	std.SetAdjustFieldsToRight(val)
+}
+
+// SetForceColorOutput will set a flag that forces standard logger to
+// be colored.
+func SetForceColorOutput(val bool) {
+	std.SetForceColorOutput(val)
+}
+
+// SetParseFields activates or deactivates field parsing in the
+// message for the standard logger.
+func SetParseFields(active bool) {
+	std.SetParseFields(active)
+}
+
 // AddHook adds a hook to be fired on every event with
 // matching level being logged on the standard logger
 func AddHook(hook Hook) {
@@ -511,11 +514,6 @@ func SetMinLevel(l Level) {
 // SetDefaultLevel sets the level that will be used when no level is detected for the standard logger
 func SetDefaultLevel(l Level) {
 	std.SetDefaultLevel(l)
-}
-
-// ParseFields activates or deactivates field parsing in the message for the standard logger
-func ParseFields(active bool) {
-	std.ParseFields(active)
 }
 
 // SetHeaders sets custom headers as the input headers to be search for to determine the level for the standard logger
@@ -553,11 +551,6 @@ func SetExtractor(ex Extractor) {
 	std.SetExtractor(ex)
 }
 
-// ForceColorOutput will set a flag that forces logger to be colored.
-func ForceColorOutput(val bool) {
-	std.ForceColorOutput(val)
-}
-
 // FixedValue sets a field-value pair that will get automatically
 // added to every log entry in the standard logger
 func FixedValue(key string, value interface{}) {
@@ -576,4 +569,45 @@ func ParseLevel(level string) (Level, error) {
 	}
 
 	return unknown, fmt.Errorf("could not parse level %s", level)
+}
+
+// NewCoLog returns CoLog instance ready to be used in logger.SetOutput()
+func NewCoLog(out io.Writer, prefix string, flags int) *CoLog {
+	cl := new(CoLog)
+	cl.minLevel = initialMinLevel
+	cl.defaultLevel = initialDefaultLevel
+	cl.hooks = make(hookPool)
+	cl.fixed = make(Fields)
+	cl.headers = defaultHeaders
+	cl.prefix = prefix
+	cl.formatter = &StdFormatter{Flag: flags}
+	cl.extractor = &StdExtractor{}
+	cl.SetOutput(out)
+	if host, err := os.Hostname(); err != nil {
+		cl.host = host
+	}
+
+	return cl
+}
+
+// Register sets CoLog as output for the default logger.
+// It "hijacks" the standard logger flags and prefix previously set.
+// It's not possible to know the output previously set, so the
+// default os.Stderr is assumed.
+func Register() {
+	// Inherit standard logger flags and prefix if appropriate
+	if !std.customFmt {
+		std.formatter.SetFlags(log.Flags())
+	}
+
+	if log.Prefix() != "" && std.prefix == "" {
+		std.SetPrefix(log.Prefix())
+	}
+
+	// Disable all extras
+	log.SetPrefix("")
+	log.SetFlags(0)
+
+	// Set CoLog as output
+	log.SetOutput(std)
 }
