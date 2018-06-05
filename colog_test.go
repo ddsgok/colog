@@ -100,7 +100,7 @@ func TestMinDefaultLevel(t *testing.T) {
 func TestPrefix(t *testing.T) {
 
 	tw := new(mockWriter)
-	cl := NewCoLog(tw, "abc", 0)
+	cl := New(tw, "abc", 0)
 	cl.SetFormatter(&StdFormatter{Colors: false})
 
 	logger := cl.NewLogger()
@@ -113,7 +113,7 @@ func TestPrefix(t *testing.T) {
 func TestSimpleOutput(t *testing.T) {
 
 	tw := new(mockWriter)
-	cl := NewCoLog(tw, "", 0)
+	cl := New(tw, "", 0)
 	cl.SetFormatter(&StdFormatter{Colors: false})
 	logger := cl.NewLogger()
 	for k, tt := range outputTests {
@@ -137,7 +137,7 @@ func TestCustomHeaders(t *testing.T) {
 	}
 
 	tw := new(mockWriter)
-	cl := NewCoLog(tw, "", 0)
+	cl := New(tw, "", 0)
 	cl.SetFormatter(&StdFormatter{Colors: false})
 	cl.SetHeaders(customHeaders)
 	cl.AddHeader("oh no! ", LAlert)
@@ -208,7 +208,7 @@ func testNewLoggerOutput(t *testing.T, wg *sync.WaitGroup) {
 
 	tb := new(mockBufferWriter)
 	tb.Data = make(map[string][]byte, len(outputTests))
-	cl := NewCoLog(tb, "", 0)
+	cl := New(tb, "", 0)
 	cl.SetFormatter(&StdFormatter{Colors: false})
 	logger := cl.NewLogger()
 
@@ -236,7 +236,7 @@ func TestHooks(t *testing.T) {
 	h1 := &mockHook{levels: []Level{LDebug, LInfo}}
 	h2 := &mockHook{levels: []Level{LInfo, LWarning}}
 	tw := new(mockWriter)
-	cl := NewCoLog(tw, "", 0)
+	cl := New(tw, "", 0)
 	cl.SetParseFields(true)
 	cl.AddHook(h1)
 	cl.AddHook(h2)
@@ -320,7 +320,7 @@ func TestFixedValues(t *testing.T) {
 
 	hook := &mockHook{levels: []Level{LDebug, LInfo}}
 	tw := new(mockWriter)
-	cl := NewCoLog(tw, "", 0)
+	cl := New(tw, "", 0)
 	cl.SetParseFields(true)
 	cl.FixedValue("key", "val")
 	cl.FixedValue("foo", "bar")

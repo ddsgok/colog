@@ -46,7 +46,7 @@ const (
 var (
 	// std is the global singleton
 	// analog of the standard log.std
-	std = NewCoLog(os.Stderr, "", 0)
+	std = New(os.Stderr, "", 0)
 
 	initialMinLevel     = LTrace
 	initialDefaultLevel = LInfo
@@ -571,8 +571,8 @@ func ParseLevel(level string) (Level, error) {
 	return unknown, fmt.Errorf("could not parse level %s", level)
 }
 
-// NewCoLog returns CoLog instance ready to be used in logger.SetOutput()
-func NewCoLog(out io.Writer, prefix string, flags int) *CoLog {
+// New returns CoLog instance ready to be used in logger.SetOutput()
+func New(out io.Writer, prefix string, flags int) *CoLog {
 	cl := new(CoLog)
 	cl.minLevel = initialMinLevel
 	cl.defaultLevel = initialDefaultLevel
