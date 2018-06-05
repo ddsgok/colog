@@ -1,24 +1,12 @@
 package colog
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
-	"strconv"
 	"sync"
+	"log"
+	"fmt"
+	"strconv"
+	"encoding/json"
 )
-
-// JSONFormatter serializes entries to JSON
-// TimeFormat can be any Go time format, if empty
-// it will mimic the standard logger format
-// LevelAsNum will use a numeric string "1", "2",...
-// for as levels instead of "trace", "debug", ..
-type JSONFormatter struct {
-	mu         sync.Mutex
-	TimeFormat string
-	LevelAsNum bool
-	Flag       int
-}
 
 // JSONEntry is an entry with the final JSON field types
 // We can not just implement the Marshaller interface since
@@ -32,6 +20,18 @@ type JSONEntry struct {
 	Line    int    `json:"line,omitempty"`
 	Message string `json:"message,omitempty"`
 	Fields  Fields `json:"fields,omitempty"`
+}
+
+// JSONFormatter serializes entries to JSON
+// TimeFormat can be any Go time format, if empty
+// it will mimic the standard logger format
+// LevelAsNum will use a numeric string "1", "2",...
+// for as levels instead of "trace", "debug", ..
+type JSONFormatter struct {
+	mu         sync.Mutex
+	TimeFormat string
+	LevelAsNum bool
+	Flag       int
 }
 
 // Format takes and entry and returns the formatted output in bytes
@@ -118,3 +118,5 @@ func (jf *JSONFormatter) date(e *Entry) (date string) {
 
 	return date
 }
+
+

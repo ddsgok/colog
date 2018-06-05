@@ -45,7 +45,7 @@ func BenchmarkCoLogColorWithFlagsAndFields(b *testing.B) {
 
 func doBench(b *testing.B, message string, flag int, fields bool, colors bool) {
 	cl := NewCoLog(new(nilWriter), "", flag)
-	cl.ParseFields(fields)
+	cl.SetParseFields(fields)
 	cl.SetFormatter(&StdFormatter{Flag: flag, Colors: colors})
 	//	fmt.Printf("flags %d \n", cl.formatter.Flags())
 	logger := cl.NewLogger()

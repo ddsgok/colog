@@ -11,35 +11,39 @@ import (
 	"time"
 )
 
-var colorLabels = LevelMap{
-	LTrace:   []byte("[ trace ] "),
-	LDebug:   []byte("[ \x1b[0;36mdebug\x1b[0m ] "),
-	LInfo:    []byte("[  \x1b[0;32minfo\x1b[0m ] "),
-	LWarning: []byte("[  \x1b[0;33mwarn\x1b[0m ] "),
-	LError:   []byte("\x1b[0;31m[ error ]\x1b[0m "),
-	LAlert:   []byte("\x1b[0;37;41m[ alert ]\x1b[0m "),
-}
-
-var plainLabels = LevelMap{
-	LTrace:   []byte("[ trace ] "),
-	LDebug:   []byte("[ debug ] "),
-	LInfo:    []byte("[  info ] "),
-	LWarning: []byte("[  warn ] "),
-	LError:   []byte("[ error ] "),
-	LAlert:   []byte("[ alert ] "),
-}
+var (
+	colorLabels = LevelMap{
+		LTrace:   []byte("[ trace ] "),
+		LDebug:   []byte("[ \x1b[0;36mdebug\x1b[0m ] "),
+		LInfo:    []byte("[  \x1b[0;32minfo\x1b[0m ] "),
+		LMessage: []byte("[  \x1b[0;32minfo\x1b[0m ] "),
+		LWarning: []byte("[  \x1b[0;33mwarn\x1b[0m ] "),
+		LError:   []byte("\x1b[0;31m[ error ]\x1b[0m "),
+		LAlert:   []byte("\x1b[0;37;41m[ alert ]\x1b[0m "),
+	}
+	plainLabels = LevelMap{
+		LTrace:   []byte("[ trace ] "),
+		LDebug:   []byte("[ debug ] "),
+		LInfo:    []byte("[  info ] "),
+		LMessage: []byte("[  info ] "),
+		LWarning: []byte("[  warn ] "),
+		LError:   []byte("[ error ] "),
+		LAlert:   []byte("[ alert ] "),
+	}
+)
 
 // StdFormatter supports plain and color level headers
 // and bold/padded fields
 type StdFormatter struct {
-	mu             sync.Mutex
-	Flag           int
-	HeaderPlain    LevelMap
-	HeaderColor    LevelMap
+	mu                  sync.Mutex
+	Flag                int
+	HeaderPlain         LevelMap
+	HeaderColor         LevelMap
 	AdjustFieldsToRight bool
-	Colors         bool // Force enable colors
-	NoColors       bool // Force disable colors (has preference)
-	colorSupported bool
+	OmitHeaders         bool
+	Colors              bool // Force enable colors
+	NoColors            bool // Force disable colors (has preference)
+	colorSupported      bool
 }
 
 // Format takes and entry and returns the formatted output in bytes
@@ -65,7 +69,11 @@ func (sf *StdFormatter) Format(e *Entry) ([]byte, error) {
 
 	// Level headers
 	headers := sf.levelHeaders()
-	message = append(headers[e.Level], append(header, e.Message...)...)
+
+	message = e.Message
+	if !sf.OmitHeaders {
+		message = append(headers[e.Level], append(header, message...)...)
+	}
 
 	if e.Fields != nil {
 		sf.stdFields(&message, e.Fields, e.Level)
