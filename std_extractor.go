@@ -3,12 +3,25 @@ package colog
 import (
 	"bytes"
 	"regexp"
+
+	"github.com/ddspog/str"
 )
 
-// regex to extract key-value (or quoted value) from the logged message
-// if you can do this better please make a pull request
-// this is just the result of lots of trial and error
-var fieldsRegex = `(?P<key>([\pL0-9_]+))\s*=\s*((?P<value>([\pL0-9_\-:\.\\\/]+))|(?P<quoted>("[^"]*"|'[^']*')))`
+var (
+	keyPtn = `[\pL\d_]+`
+	valuePtn = `[\pL\pN\\\/:.\-_'"(){}<>@ ]+`
+	allButApostrophe  = `[^']+`
+	allButQuote = `[^="]+`
+	allButEqual = `[^=]+`
+
+	// regex to extract key-value (or quoted value) from the logged message
+	// if you can do this better please make a pull request
+	// this is just the result of lots of trial and error
+	fieldsRegex = str.Fmt(
+		`(?P<key>%[1]s)\s*=\s*(?P<value>%[2]s|"%[3]s"|'%[4]s'|{%[5]s}|&(?:%[1]s|{%[5]s}))(?:\s+|$)`,
+		keyPtn, valuePtn, allButQuote,allButApostrophe, allButEqual,
+	)
+)
 
 // StdExtractor implements a regex based extractor for key-value pairs
 // both unquoted foo=bar and quoted foo="some bar" are supported
@@ -36,14 +49,8 @@ func (se *StdExtractor) Extract(e *Entry) error {
 
 	for _, match := range matches {
 		// First group, simple key-value detected
-		if len(match[1]) > 0 && len(match[4]) > 0 {
-			key, value = match[1], match[4]
-		}
-
-		// Second group, quoted value detected
-		if len(match[1]) > 0 && len(match[6]) > 0 {
-			key, value = match[1], match[6]
-			value = value[1 : len(value)-1] // remove quotes, first and last character
+		if len(match[1]) > 0 && len(match[2]) > 0 {
+			key, value = match[1], match[2]
 		}
 
 		captures[string(key)] = string(value)
