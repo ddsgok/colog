@@ -1,14 +1,12 @@
-[![Build Status](https://travis-ci.org/ddspog/colog.svg?branch=master)](https://travis-ci.org/ddspog/colog)&nbsp;[![godoc reference](https://godoc.org/ddspog/colog?status.png)](https://godoc.org/ddspog/colog)
-
-# What's CoLog?
+# What's CoLog? [![Build Status](https://travis-ci.org/ddsgok/colog.svg?branch=master)](https://travis-ci.org/ddsgok/colog)&nbsp;[![godoc reference](https://godoc.org/ddsgok/colog?status.png)](https://godoc.org/ddsgok/colog)
 
 CoLog is a prefix-based leveled execution log for Go. It's heavily inspired by [Logrus](https://github.com/Sirupsen/logrus) and aims to offer similar features by parsing the output of the standard library log. If you don't understand what this means take a look at this picture.
 
 ![CoLog showcase](http://i.imgur.com/jx9pu1b.png)
 
-## But why?
+## The why
 
-An introduction and the rationale behind CoLog can be found in this blog post: https://texlution.com/post/colog-prefix-based-logging-in-golang/
+An introduction and the rationale behind CoLog can be found in this blog post: [texlution.com/colog-...-logging/](https://texlution.com/post/colog-prefix-based-logging-in-golang/)
 
 ## Features
 
@@ -31,20 +29,20 @@ CoLog's API is very unlikely to get breaking changes, but there are no promises.
 
 ## Usage examples
 
-#### Basic usage
+### Basic usage
 
 ```go
 package main
 
 import (
-	"log"
+    "log"
 
-	"github.com/ddspog/colog"
+    "github.com/ddsgok/colog"
 )
 
 func main() {
-	colog.Register()
-	log.Print("info: that's all it takes!")
+    colog.Register()
+    log.Print("info: that's all it takes!")
 }
 ```
 
@@ -54,29 +52,29 @@ func main() {
 package main
 
 import (
-	"log"
-	"os"
-	"time"
+    "log"
+    "os"
+    "time"
 
-	"github.com/ddspog/colog"
+    "github.com/ddsgok/colog"
 )
 
 func main() {
-	file, err := os.OpenFile("temp_json.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0777)
-	if err != nil {
-		panic(err)
-	}
+    file, err := os.OpenFile("temp_json.log", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0777)
+    if err != nil {
+        panic(err)
+    }
 
-	colog.Register()
-	colog.SetOutput(file)
-	colog.ParseFields(true)
-	colog.SetFormatter(&colog.JSONFormatter{
-		TimeFormat: time.RFC3339,
-		Flag:       log.Lshortfile,
-	})
+    colog.Register()
+    colog.SetOutput(file)
+    colog.ParseFields(true)
+    colog.SetFormatter(&colog.JSONFormatter{
+        TimeFormat: time.RFC3339,
+        Flag:       log.Lshortfile,
+    })
 
-	log.Print("info: logging this to json")
-	log.Print("warning: with fields foo=bar")
+    log.Print("info: logging this to json")
+    log.Print("warning: with fields foo=bar")
 }
 
 // cat tempjson.log
@@ -90,21 +88,21 @@ func main() {
 package main
 
 import (
-	"log"
-	"os"
+    "log"
+    "os"
 
-	"github.com/ddspog/colog"
+    "github.com/ddsgok/colog"
 )
 
 func main() {
-	cl := colog.NewCoLog(os.Stdout, "worker ", log.LstdFlags)
-	cl.SetMinLevel(colog.LInfo)
-	cl.SetDefaultLevel(colog.LWarning)
-	cl.FixedValue("worker_id", 42)
+    cl := colog.NewCoLog(os.Stdout, "worker ", log.LstdFlags)
+    cl.SetMinLevel(colog.LInfo)
+    cl.SetDefaultLevel(colog.LWarning)
+    cl.FixedValue("worker_id", 42)
 
-	logger := cl.NewLogger()
-	logger.Print("this gets warning level")
-	logger.Print("debug: this won't be displayed")
+    logger := cl.NewLogger()
+    logger.Print("this gets warning level")
+    logger.Print("debug: this won't be displayed")
 }
 
 // [  warn ] worker 2015/08/16 13:43:06 this gets warning level    worker_id=42
@@ -116,40 +114,40 @@ func main() {
 package main
 
 import (
-	"fmt"
-	"log"
+    "fmt"
+    "log"
 
-	"github.com/ddspog/colog"
+    "github.com/ddsgok/colog"
 )
 
 type myHook struct {
-	levels []colog.Level
+    levels []colog.Level
 }
 
 func (h *myHook) Levels() []colog.Level {
-	return h.levels
+    return h.levels
 }
 
 func (h *myHook) Fire(e *colog.Entry) error {
-	fmt.Printf("We got an entry: \n%#v", e)
-	return nil
+    fmt.Printf("We got an entry: \n%#v", e)
+    return nil
 }
 
 func main() {
-	colog.Register()
-	colog.ParseFields(true)
+    colog.Register()
+    colog.ParseFields(true)
 
-	hook := &myHook{
-		levels: []colog.Level{
-			colog.LInfo,    // the hook only receives
-			colog.LWarning, // these levels
-		},
-	}
+    hook := &myHook{
+        levels: []colog.Level{
+            colog.LInfo,    // the hook only receives
+            colog.LWarning, // these levels
+        },
+    }
 
-	colog.AddHook(hook)
+    colog.AddHook(hook)
 
-	colog.SetMinLevel(colog.LError) // this affects only the output
-	log.Print("info: something foo=bar")
+    colog.SetMinLevel(colog.LError) // this affects only the output
+    log.Print("info: something foo=bar")
 }
 
 // We got an entry:
