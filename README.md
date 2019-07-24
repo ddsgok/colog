@@ -1,4 +1,4 @@
-# What's CoLog? [![Build Status](https://travis-ci.org/ddsgok/colog.svg?branch=master)](https://travis-ci.org/ddsgok/colog)&nbsp;[![godoc reference](https://godoc.org/ddsgok/colog?status.png)](https://godoc.org/ddsgok/colog)
+# What's CoLog? [![Build Status](https://travis-ci.org/github.com/ddsgok/colog.svg?branch=master)](https://travis-ci.org/github.com/ddsgok/colog)&nbsp;[![godoc reference](https://godoc.org/github.com/ddsgok/colog?status.png)](https://godoc.org/github.com/ddsgok/colog)
 
 CoLog is a prefix-based leveled execution log for Go. It's heavily inspired by [Logrus](https://github.com/Sirupsen/logrus) and aims to offer similar features by parsing the output of the standard library log. If you don't understand what this means take a look at this picture.
 
