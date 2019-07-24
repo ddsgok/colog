@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"regexp"
 
-	"github.com/ddspog/str"
+	"github.com/ddsgok/str"
 )
 
 var (
